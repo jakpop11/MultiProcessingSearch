@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter import filedialog
+import os
 
 import file_service
 from search import Search
@@ -80,7 +81,7 @@ class View(ttk.Frame):
         self.generate_files_btn = ttk.Button(menu_f, text="Generate Files", command=self.__generate_btn_command)
         self.generate_files_btn.pack(side="left")
 
-            # TEST convert string index to tkinter text index
+        # TEST convert string index to tkinter text index
         self.convert_btn = ttk.Button(menu_f, text="Convert indexes", command=self.__convert_btn_command)
         self.convert_btn.pack(side="left")
 
@@ -141,7 +142,7 @@ class Controller:
         try:
             filepath = filedialog.askopenfilename()
         except Exception:
-            print("Error durring openning file")
+            print("Error during opening file")
             filepath = "PanTadeusz.txt"
 
         # if not canceled
@@ -202,27 +203,31 @@ class Controller:
 
     def search(self):
         pattern = self.view.entry.get()
-        if pattern != "":
-            self.view.search_btn.configure(state="disable")
-            # algorytm szukajacy
-            self.model.search = Search(self.model.text, pattern)
-            self.model.search.multiprocess_BM_search()
-            times = self.model.search.get_times()
-            print("Times:")
-            print(times)
+        if pattern == "":
+            return
 
-            self.model.search.generate_plots()
+        self.view.search_btn.configure(state="disable")
+        # algorytm szukajacy
+        self.model.search = Search(self.model.text, pattern)
+        self.model.search.multiprocess_search((os.cpu_count() + 1)//2)
 
-            # zapis danych do pliku
-            tmp = f"\nWyniki dla {self.model.search.tlen:_} znakow:\n\n"
-            for p, time in times.items():
-                tmp += f"{p}: {time}\n"
-            file_service.append_file_with_str("Logs.txt", tmp)
+        # self.model.search.multiprocess_test()
+        times = self.model.search.get_times()
+        print("Times:")
+        print(times)
 
-            # wyswietlenie indeksow w oknie output
-            self.load_output(f"Wrzorzec znaleziony na pozycji:\n{str(self.model.search.get_results())}")
+        self.model.search.generate_plots()
 
-            self.view.search_btn.configure(state="normal")
+        # zapis danych do pliku
+        tmp = f"\nWyniki dla {self.model.search.tlen:_} znakow:\n\n"
+        for p, time in times.items():
+            tmp += f"{p}: {time}\n"
+        file_service.append_file_with_str("Logs.txt", tmp)
+
+        # wyswietlenie indeksow w oknie output
+        self.load_output(f"Wrzorzec znaleziony na pozycji:\n{str(self.model.search.get_results())}")
+
+        self.view.search_btn.configure(state="normal")
 
 
 class App(tk.Tk):

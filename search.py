@@ -87,48 +87,51 @@ class Search:
                     i += self.plen
                     j = self.plen - 1
 
-    def multiprocess_BM_search(self):
+    def multiprocess_search(self, total_processes_number: int):
+        manager = multiprocessing.Manager()
+
+        # lista indeksow rozpoczynajacych wzorzec
+        self.pattern_indexes = manager.list()
+        print(f"\nmax proc: {total_processes_number}")
+
+        r = self.tlen % total_processes_number
+        shift = self.tlen // total_processes_number
+
+        lo = 0
+        hi = 0
+
+        # tworzenie procesow
+        processes = []
+        for p in range(total_processes_number):
+            if p < r:
+                lo = hi
+                hi = lo + shift + 1
+            else:
+                lo = hi
+                hi = lo + shift
+
+            # print(f"lo: {lo}, hi:{hi}")
+            process = multiprocessing.Process(target=self._search_loop, args=(lo, hi))
+            processes.append(process)
+
+        # pomiar czasu
+        start_time = time.perf_counter()
+
+        # uruchomienie procesow rownolegle
+        for p in processes:
+            p.start()
+        # zakonczenie pracy rownoleglej
+        for p in processes:
+            p.join()
+
+        # zapisanie czasu
+        finish_time = time.perf_counter()
+        self.times[total_processes_number] = finish_time - start_time
+
+    def multiprocess_test(self):
         # dla roznej ilosci procesow
         for max_processes in range(1, os.cpu_count() + 1):
-            manager = multiprocessing.Manager()
-
-            # lista indeksow rozpoczynajacych wzorzec
-            self.pattern_indexes = manager.list()
-            print(f"\nmax proc: {max_processes}")
-
-            r = self.tlen % max_processes
-            shift = self.tlen // max_processes
-
-            lo = 0
-            hi = 0
-
-            # tworzenie procesow
-            processes = []
-            for p in range(max_processes):
-                if p < r:
-                    lo = hi
-                    hi = lo + shift + 1
-                else:
-                    lo = hi
-                    hi = lo + shift
-
-                # print(f"lo: {lo}, hi:{hi}")
-                process = multiprocessing.Process(target=self._search_loop, args=(lo, hi))
-                processes.append(process)
-
-            # pomiar czasu
-            start_time = time.perf_counter()
-
-            # uruchomienie procesow rownolegle
-            for p in processes:
-                p.start()
-            # zakonczenie pracy rownoleglej
-            for p in processes:
-                p.join()
-
-            # zapisanie czasu
-            finish_time = time.perf_counter()
-            self.times[max_processes] = finish_time - start_time
+            self.multiprocess_search(max_processes)
 
     @staticmethod
     def _binary_search(data: list, find_ch: str) -> int:
