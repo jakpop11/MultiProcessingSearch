@@ -1,3 +1,4 @@
+import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
 
@@ -15,6 +16,8 @@ class View(ttk.Frame):
 
         # setup controller
         self.controller = None
+
+        self.__line_indexes = []
 
     def set_controller(self, controller):
         """
@@ -36,6 +39,7 @@ class View(ttk.Frame):
         self.generate_files_btn.pack(side="left")
 
         # TEST convert string index to tkinter text index
+        # Later change to benchmark multiprocessing
         self.convert_btn = ttk.Button(menu_f, text="Convert indexes", command=self.__convert_btn_command)
         self.convert_btn.pack(side="left")
 
@@ -65,8 +69,60 @@ class View(ttk.Frame):
         self.output.pack(fill="x")
         self.output.config(state="disabled")
 
-    def __load_text(self):
-        self.controller.load_text()
+    def load_text(self, text: str):
+        self.text_box.configure(state=tk.NORMAL)
+        # clear text_box
+        self.text_box.delete(1.0, "end")
+        self.text_box.insert("insert", text)
+        self.text_box.configure(state="disabled")
+
+        # calculate new line indexes
+        self.__line_indexes.clear()
+        for i, ch in enumerate(text):
+            if ch == '\n':
+                self.__line_indexes.append(i)
+
+    def load_output(self, text: str):
+        self.output.configure(state=tk.NORMAL)
+        # clear text_box
+        self.output.delete(1.0, "end")
+        self.output.insert("insert", text)
+        self.output.configure(state="disabled")
+
+    def get_search_entry(self) -> str:
+        return self.entry.get()
+
+    def on_search_start(self):
+        self.search_btn.configure(state="disable")
+
+    def on_search_finished(self, indexes: list, pattern_length: int):
+        self.search_btn.configure(state="normal")
+        self._highlight_patterns(indexes, pattern_length)
+
+    def _highlight_patterns(self, indexes: list, pattern_length: int):
+        self.text_box.tag_delete("pattern")
+
+        # set text tag
+        self.text_box.tag_configure("pattern", background="yellow")
+
+        for index in indexes:
+            text_index, end_index = self.__convert_index(index, pattern_length)
+
+            # highlight text
+            self.text_box.tag_add("pattern", text_index, end_index)
+
+    def __convert_index(self, index: int, length: int) -> (str, str):
+        # TODO: decrease time complexity by starting for loop from previous line index
+        for i, l_index in enumerate(self.__line_indexes):
+            # continue until in line with pattern
+            if index >= l_index:
+                continue
+
+            relative_index = index - self.__line_indexes[i-1] - 1
+            start = f"{i+1}.{relative_index}"
+            end = f"{i+1}.{relative_index + length}"
+
+            return start, end
 
     def __open_btn_command(self):
         self.controller.open_file()

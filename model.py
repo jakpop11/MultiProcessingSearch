@@ -10,7 +10,7 @@ class Model:
         self.filepath = "Krzyzacy_full.txt"
         self.text = ""
         self.search = None
-        self.line_indexes = []
+        # self.line_indexes = []
 
     def generate_file(self, chars_quantity: int):
         """
