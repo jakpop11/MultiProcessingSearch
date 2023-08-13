@@ -38,9 +38,8 @@ class View(ttk.Frame):
         self.generate_files_btn = ttk.Button(menu_f, text="Generate Files", command=self.__generate_btn_command)
         self.generate_files_btn.pack(side="left")
 
-        # TEST convert string index to tkinter text index
-        # Later change to benchmark multiprocessing
-        self.convert_btn = ttk.Button(menu_f, text="Convert indexes", command=self.__convert_btn_command)
+        # Benchmark
+        self.convert_btn = ttk.Button(menu_f, text="Benchmark", command=self.__benchmark_btn_command)
         self.convert_btn.pack(side="left")
 
         # Search
@@ -62,10 +61,11 @@ class View(ttk.Frame):
         self.text_box.config(state="disabled")
 
         # Output panel
-        output_lable = ttk.Label(content_frame, text="Output:")
-        output_lable.pack(fill="x")
+        output_label = ttk.Label(content_frame, text="Output:")
+        output_label.pack(fill="x")
 
-        self.output = scrolledtext.ScrolledText(content_frame, wrap="word", padx=2, height=16, borderwidth=2, background="#e0e0e0")
+        self.output = scrolledtext.ScrolledText(
+            content_frame, wrap="word", padx=2, height=16, borderwidth=2, background="#e0e0e0")
         self.output.pack(fill="x")
         self.output.config(state="disabled")
 
@@ -78,6 +78,7 @@ class View(ttk.Frame):
 
         # calculate new line indexes
         self.__line_indexes.clear()
+        # self.__line_indexes.append(-1)  # first line
         for i, ch in enumerate(text):
             if ch == '\n':
                 self.__line_indexes.append(i)
@@ -118,7 +119,11 @@ class View(ttk.Frame):
             if index >= l_index:
                 continue
 
-            relative_index = index - self.__line_indexes[i-1] - 1
+            if i != 0:
+                relative_index = index - self.__line_indexes[i-1] - 1
+            else:
+                relative_index = index
+
             start = f"{i+1}.{relative_index}"
             end = f"{i+1}.{relative_index + length}"
 
@@ -133,5 +138,5 @@ class View(ttk.Frame):
     def __search_btn_command(self):
         self.controller.search()
 
-    def __convert_btn_command(self):
-        self.controller.convert_indexes()
+    def __benchmark_btn_command(self):
+        self.controller.benchmark_search()

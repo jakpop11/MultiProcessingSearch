@@ -29,6 +29,9 @@ def read_file_to_str(filepath) -> str:
     :param filepath:
     :return:
     """
+    if filepath == '':
+        return ''
+
     file = open(filepath, 'r', encoding="utf-8")
     tmp_str = file.read()
     file.close()

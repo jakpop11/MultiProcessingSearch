@@ -7,10 +7,9 @@ class Model:
     oraz dzialanie algorytmow
     """
     def __init__(self):
-        self.filepath = "Krzyzacy_full.txt"
-        self.text = ""
+        self.filepath = ''
+        self.text = ''
         self.search = None
-        # self.line_indexes = []
 
     def generate_file(self, chars_quantity: int):
         """

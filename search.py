@@ -1,7 +1,5 @@
-import os
 import time
 import multiprocessing
-import matplotlib.pyplot as plt
 
 
 class Search:
@@ -12,16 +10,19 @@ class Search:
         self.tlen = len(text)
         self.plen = len(pattern)
 
+        self.pattern_indexes = []
+
         # lista znakow wystepujacych we wzorcu
+        # TODO: Convert to set {} ?
         self.p_chars = []
 
-        for ch in self._insert_sort(list(pattern)):
+        for ch in insert_sort(list(pattern)):
             # czy znaku nie ma na liscie
-            if self._binary_search(self.p_chars, ch) == -1:
+            if binary_search(self.p_chars, ch) == -1:
                 self.p_chars.append(ch)
 
-        # slownik czasow wzgledem liczby procesorow
-        self.times = {}
+        # # slownik czasow wzgledem liczby procesorow
+        # self.times = {}
 
     def get_results(self) -> list:
         """
@@ -31,29 +32,10 @@ class Search:
         tmp = list(self.pattern_indexes)
         # sortownie ?
         # if len(tmp) != 0:
-        #     return self._insert_sort(tmp)
+        #     return insert_sort(tmp)
         # else:
         #     return []
         return tmp
-
-    def get_times(self) -> dict:
-        """
-        Zwraca slownik zawierajacy liczbe procesow
-        oraz czas wykonywania algorytmu
-        :return:
-        """
-        return self.times
-
-    def generate_plots(self):
-        fig = plt.figure(figsize=(10, 5))
-        plt.bar(self.times.keys(), self.times.values(), color="orange", width=0.4)
-
-        plt.xlabel("Liczba procesow")
-        plt.ylabel("Czas [s]")
-        plt.title(f"Porownanie czasow wykonywania algorytmu wzgledem ilosci procesow dla {self.tlen:_} znakow")
-        # zapis wykresu do pliku
-        plt.savefig(f"{self.tlen:_}_chars_plt.jpg")
-        plt.show()
 
     def _search_loop(self, lo: int, hi: int):
         i = self.plen - 1 + lo
@@ -78,7 +60,7 @@ class Search:
 
             else:
                 # czy znak znajduje sie we wzorze
-                if self._binary_search(self.p_chars, self.text[i]) != -1:
+                if binary_search(self.p_chars, self.text[i]) != -1:
                     # "przesuniecie" wzorca o 1 w prawo
                     i += 1 + self.plen - j - 1
                     j = self.plen - 1
@@ -87,7 +69,7 @@ class Search:
                     i += self.plen
                     j = self.plen - 1
 
-    def multiprocess_search(self, total_processes_number: int):
+    def multiprocess_search(self, total_processes_number: int) -> (int, float):
         manager = multiprocessing.Manager()
 
         # lista indeksow rozpoczynajacych wzorzec
@@ -114,7 +96,7 @@ class Search:
             process = multiprocessing.Process(target=self._search_loop, args=(lo, hi))
             processes.append(process)
 
-        # pomiar czasu
+        # rozpoczecie pomiaru czasu
         start_time = time.perf_counter()
 
         # uruchomienie procesow rownolegle
@@ -124,65 +106,60 @@ class Search:
         for p in processes:
             p.join()
 
-        # zapisanie czasu
+        # zakonczenie pomiaru czasu
         finish_time = time.perf_counter()
-        self.times[total_processes_number] = finish_time - start_time
+        return total_processes_number, (finish_time - start_time)
 
-    def multiprocess_test(self):
-        # dla roznej ilosci procesow
-        for max_processes in range(1, os.cpu_count() + 1):
-            self.multiprocess_search(max_processes)
 
-    @staticmethod
-    def _binary_search(data: list, find_ch: str) -> int:
-        """
-        Zwraca indeks szukanego znaku z listy
-        lub '-1' jesli takiego nie znaleziono
-        :param data:
-        :param find_ch:
-        :return:
-        """
+def binary_search(data: list, find_ch: str) -> int:
+    """
+    Zwraca indeks szukanego znaku z listy
+    lub '-1' jesli takiego nie znaleziono
+    :param data:
+    :param find_ch:
+    :return:
+    """
 
-        # indeksy poczatku i konca rozpatrywanej czesci tablicy
-        lo = 0
-        hi = len(data) - 1
-        # liczba wykonanych iteracji
-        i = 0
+    # indeksy poczatku i konca rozpatrywanej czesci tablicy
+    lo = 0
+    hi = len(data) - 1
+    # liczba wykonanych iteracji
+    i = 0
 
-        while lo <= hi:
-            # Wyznacza indeks srodka listy
-            mid = int(lo + ((hi - lo) / 2))
-            i = i + 1
+    while lo <= hi:
+        # Wyznacza indeks srodka listy
+        mid = int(lo + ((hi - lo) / 2))
+        i = i + 1
 
-            if data[mid] < find_ch:
-                lo = mid + 1
-            elif find_ch < data[mid]:
-                hi = mid - 1
-            else:
-                return mid
+        if data[mid] < find_ch:
+            lo = mid + 1
+        elif find_ch < data[mid]:
+            hi = mid - 1
+        else:
+            return mid
 
-        # nie znaleziono znaku
-        return -1
+    # nie znaleziono znaku
+    return -1
 
-    @staticmethod
-    def _insert_sort(data: list) -> list:
-        """
-        Zwraca posortowana liste
-        :param data:
-        :return:
-        """
 
-        result = data.copy()
+def insert_sort(data: list) -> list:
+    """
+    Zwraca posortowana liste
+    :param data:
+    :return:
+    """
 
-        # Sortowanie
-        for j in range(1, len(result)):
-            i = j
-            while i > 0 and result[i - 1] > result[i]:
-                # zamiana wartosci
-                tmp = result[i]
-                result[i] = result[i - 1]
-                result[i - 1] = tmp
+    result = data.copy()
 
-                # iteracja w tyl
-                i = i - 1
-        return result
+    # Sortowanie
+    for j in range(1, len(result)):
+        i = j
+        while i > 0 and result[i - 1] > result[i]:
+            # zamiana wartosci
+            tmp = result[i]
+            result[i] = result[i - 1]
+            result[i - 1] = tmp
+
+            # iteracja w tyl
+            i = i - 1
+    return result
